@@ -59,19 +59,14 @@ def run_batch_ingestion(
         raise ValueError("kaggle_credit_card_csv is not set in config")
     kaggle_path = _spark_path(kaggle_path)
 
-    bronze_base_path = storage_cfg.get("bronze_path")
-    if not bronze_base_path:
-        raise ValueError("storage.bronze_path is not set in config")
-    bronze_base_path = _spark_path(bronze_base_path)
-
     catalog = databricks_cfg.get("catalog", "")
     schema = databricks_cfg.get("schema")
     if not schema:
         raise ValueError("databricks.schema is not set in config")
 
     bronze_table_name = tables_cfg.get("bronze_transactions", "bronze_transactions")
-
-    bronze_path = f"{bronze_base_path}/transactions"
+    full_db = f"{catalog}.{schema}" if catalog else schema
+    full_table_name = f"{full_db}.{bronze_table_name}"
 
     df: DataFrame = (
         spark.read.option("header", "true")
@@ -81,19 +76,9 @@ def run_batch_ingestion(
         .withColumn("ingestion_source", F.lit("batch"))
     )
 
-    df.write.format("delta").mode("append").save(bronze_path)
-
-    # Unity Catalog does not allow LOCATION with dbfs: scheme; use path without scheme
-    location_for_uc = bronze_path.replace("dbfs:", "") if bronze_path.startswith("dbfs:") else bronze_path
-    full_db = f"{catalog}.{schema}" if catalog else schema
     spark.sql(f"CREATE SCHEMA IF NOT EXISTS {full_db}")
-    spark.sql(
-        f"""
-        CREATE TABLE IF NOT EXISTS {full_db}.{bronze_table_name}
-        USING DELTA
-        LOCATION '{location_for_uc}'
-        """
-    )
+    # Use managed table (no LOCATION) to avoid UC path/scheme restrictions on free edition
+    df.write.format("delta").mode("append").saveAsTable(full_table_name)
 
     return df.count()
 
