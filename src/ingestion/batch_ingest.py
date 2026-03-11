@@ -83,13 +83,15 @@ def run_batch_ingestion(
 
     df.write.format("delta").mode("append").save(bronze_path)
 
+    # Unity Catalog does not allow LOCATION with dbfs: scheme; use path without scheme
+    location_for_uc = bronze_path.replace("dbfs:", "") if bronze_path.startswith("dbfs:") else bronze_path
     full_db = f"{catalog}.{schema}" if catalog else schema
     spark.sql(f"CREATE SCHEMA IF NOT EXISTS {full_db}")
     spark.sql(
         f"""
         CREATE TABLE IF NOT EXISTS {full_db}.{bronze_table_name}
         USING DELTA
-        LOCATION '{bronze_path}'
+        LOCATION '{location_for_uc}'
         """
     )
 
