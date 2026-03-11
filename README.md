@@ -143,5 +143,27 @@ This reads from `bronze_transactions`, applies validation (non-null key columns,
 
 ---
 
+## Phase 3 – Gold Layer (KPIs and Dashboard Tables)
+
+After **Phase 2** (Silver populated), run the Gold aggregation:
+
+1. In Databricks, open **`notebooks/03_gold_layer.py`**.
+2. Set the working directory to your project root (same path as in Phase 1/2).
+3. Attach the notebook to your cluster and run all cells.
+
+This reads from `silver_transactions`, groups by **report_date** (from `ingestion_ts`), and writes **`gold_fraud_daily_summary`** with: `report_date`, `total_txn`, `fraud_count`, `total_amount`, `fraud_amount`, `fraud_rate`.
+
+### Testing Phase 3
+
+- In **Catalog** → your schema, open **`gold_fraud_daily_summary`** and use **Preview**, or run:
+
+  ```sql
+  SELECT * FROM workspace.fraud.gold_fraud_daily_summary ORDER BY report_date;
+  ```
+
+- In **SQL Editor** or **Dashboards**, you can build charts from this table (e.g. fraud rate over time, total amount by day). **`gold_transaction_scores`** is added in Phase 5 (ML inference).
+
+---
+
 For detailed design and later phases, see `IMPLEMENTATION_PLAN.md`.
 
