@@ -165,5 +165,22 @@ This reads from `silver_transactions`, groups by **report_date** (from `ingestio
 
 ---
 
+## Phase 4 – Feature Engineering & ML Training
+
+After **Phase 3** (Gold and Silver populated), run the training pipeline:
+
+1. In Databricks, open **`notebooks/04_ml_training.py`**.
+2. Set the working directory to your project root (same path as in earlier phases).
+3. Attach the notebook to your cluster and run all cells.
+
+This reads from `silver_transactions`, adds fraud features (`log_amount`, `time_hour`), trains a **LogisticRegression** classifier (with StandardScaler and class_weight="balanced"), and **logs the run and registers the model** in MLflow under the name in config (`real_time_inference.model_name`, e.g. `fraud_detection_model`).
+
+### Testing Phase 4
+
+- In Databricks, go to **MLflow** (Experiments) and open the **`fraud_detection`** experiment (or the experiment name you passed). You should see a run with metrics (accuracy, precision, recall, F1, ROC-AUC) and a registered model.
+- In **Catalog** → **MLflow Model Registry**, find the model name (e.g. `fraud_detection_model`) and confirm the latest run is registered. You can move it to **Staging** or **Production** for Phase 5 inference.
+
+---
+
 For detailed design and later phases, see `IMPLEMENTATION_PLAN.md`.
 
