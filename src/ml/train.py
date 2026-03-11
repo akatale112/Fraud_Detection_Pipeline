@@ -1,6 +1,7 @@
 """
 Train a binary fraud classifier on Silver data; log and register with MLflow.
 """
+import logging
 from typing import Optional, Dict, Any
 
 import mlflow
@@ -83,7 +84,7 @@ def run_training(
         except Exception:
             pass
 
-    with mlflow.start_run():
+    with mlflow.start_run() as run:
         mlflow.log_params({
             "model_type": "LogisticRegression",
             "feature_cols": ",".join(feature_cols),
@@ -91,6 +92,15 @@ def run_training(
             "test_size": 0.2,
         })
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(pipe, "model", registered_model_name=model_name)
+        # Log without registering to avoid spark.mlflow.modelRegistryUri (not set on some clusters)
+        mlflow.sklearn.log_model(pipe, "model")
+        run_id = run.info.run_id
 
-    return {"metrics": metrics, "model_name": model_name}
+    # Register via tracking server (avoids spark.mlflow.modelRegistryUri on some clusters)
+    try:
+        model_uri = f"runs:/{run_id}/model"
+        mlflow.register_model(model_uri, model_name)
+    except Exception as e:
+        logging.warning("Model registration failed (%s). Model is logged; register from MLflow UI.", e)
+
+    return {"metrics": metrics, "model_name": model_name, "run_id": run_id}
