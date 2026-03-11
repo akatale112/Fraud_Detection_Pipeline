@@ -1,0 +1,40 @@
+env: dev
+
+databricks:
+  # Logical location for this project's tables (adjust to your workspace)
+  catalog: main          # or your Unity Catalog name
+  schema: fraud          # database/schema name for this project
+
+storage:
+  # Base path in DBFS or mounted storage for this project
+  base_path: dbfs:/mnt/fraud_project
+  raw_path: ${storage.base_path}/raw
+  bronze_path: ${storage.base_path}/bronze
+  silver_path: ${storage.base_path}/silver
+  gold_path: ${storage.base_path}/gold
+
+tables:
+  bronze_transactions: bronze_transactions
+  silver_transactions: silver_transactions
+  gold_fraud_daily_summary: gold_fraud_daily_summary
+  gold_transaction_scores: gold_transaction_scores
+
+kafka:
+  bootstrap_servers: localhost:9092   # override with real broker(s) in your env
+  topic_transactions: transactions
+  security:
+    # For dev we assume no security; for prod use SASL/SSL configs.
+    sasl_mechanism: null
+    sasl_username: null
+    sasl_password: null
+    security_protocol: PLAINTEXT
+
+data_sources:
+  kaggle_credit_card_csv: dbfs:/mnt/fraud_project/raw/creditcard.csv
+  # Update the above path once the dataset is uploaded.
+
+real_time_inference:
+  # Name of MLflow registered model to use for inference (to be set in later phases)
+  model_name: fraud_detection_model
+  serving_endpoint: null   # URL of Databricks Model Serving endpoint (Phase 5/6)
+

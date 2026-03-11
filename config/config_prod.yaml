@@ -1,0 +1,35 @@
+env: prod
+
+databricks:
+  catalog: main          # or your Unity Catalog / catalog
+  schema: fraud_prod     # separate schema for production tables
+
+storage:
+  base_path: dbfs:/mnt/fraud_project_prod
+  raw_path: ${storage.base_path}/raw
+  bronze_path: ${storage.base_path}/bronze
+  silver_path: ${storage.base_path}/silver
+  gold_path: ${storage.base_path}/gold
+
+tables:
+  bronze_transactions: bronze_transactions
+  silver_transactions: silver_transactions
+  gold_fraud_daily_summary: gold_fraud_daily_summary
+  gold_transaction_scores: gold_transaction_scores
+
+kafka:
+  bootstrap_servers: <prod-broker:9092>
+  topic_transactions: transactions
+  security:
+    sasl_mechanism: null   # e.g., PLAIN or SCRAM-SHA-512 (configure when needed)
+    sasl_username: null
+    sasl_password: null
+    security_protocol: PLAINTEXT  # or SASL_SSL / SSL, etc.
+
+data_sources:
+  kaggle_credit_card_csv: dbfs:/mnt/fraud_project_prod/raw/creditcard.csv
+
+real_time_inference:
+  model_name: fraud_detection_model
+  serving_endpoint: null   # to be set to the production Model Serving URL
+

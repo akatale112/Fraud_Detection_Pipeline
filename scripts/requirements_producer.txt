@@ -1,0 +1,4 @@
+# Dependencies for kafka_synthetic_producer.py
+confluent-kafka>=2.0.0
+# Optional: better random distributions for V1–V28 and Amount
+numpy>=1.20.0

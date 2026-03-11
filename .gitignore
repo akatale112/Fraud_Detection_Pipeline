@@ -1,0 +1,84 @@
+# Data (do not commit datasets or generated data)
+data/
+**/data/
+*.csv
+*.parquet
+*.delta/
+# Keep small fixtures if you add them under tests/fixtures with a different pattern
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+
+# Databricks local / Spark
+.databrickscfg
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Secrets and env (do not commit credentials)
+.env
+.env.local
+.env.*.local
+*.pem
+secrets/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MLflow (local runs)
+mlruns/
+mlartifacts/
+
+# Logs and temp
+*.log
+*.tmp
+tmp/
+temp/
+.cache/
+
+# Coverage and pytest
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
