@@ -1,11 +1,13 @@
 """
-Train a binary fraud classifier on Silver data; log to MLflow (no in-code registration).
-On clusters where spark.mlflow.modelRegistryUri is not set, register the model from
-MLflow UI: open the run → Register model → name e.g. fraud_detection_model.
+Train a binary fraud classifier on Silver data.
+Uses file-based MLflow tracking to avoid spark.mlflow.modelRegistryUri; also saves
+model to a path (joblib) so Phase 5 inference can load by path without the registry.
 """
+import json
 import os
 from typing import Optional, Dict, Any
 
+import joblib
 import mlflow
 import mlflow.sklearn
 from pyspark.sql import SparkSession
@@ -80,20 +82,13 @@ def run_training(
         "roc_auc": roc_auc_score(y_test, y_proba) if y_test.nunique() > 1 else 0.0,
     }
 
-    # Use workspace MLflow without requiring Spark registry config
-    if "DATABRICKS_RUNTIME_VERSION" in os.environ:
-        try:
-            mlflow.set_tracking_uri("databricks")
-        except Exception:
-            pass
-
+    # File-based MLflow only (avoids spark.mlflow.modelRegistryUri on Serverless/free tier)
+    mlflow.set_tracking_uri("file:/tmp/mlflow")
     if experiment_name:
-        try:
-            mlflow.set_experiment(experiment_name)
-        except Exception:
-            pass
-
+        mlflow.set_experiment(experiment_name)
+    run_id = None
     with mlflow.start_run() as run:
+        run_id = run.info.run_id
         mlflow.log_params({
             "model_type": "LogisticRegression",
             "feature_cols": ",".join(feature_cols),
@@ -101,13 +96,26 @@ def run_training(
             "test_size": 0.2,
         })
         mlflow.log_metrics(metrics)
-        # Log model only; do not call mlflow.register_model (avoids spark.mlflow.modelRegistryUri)
         mlflow.sklearn.log_model(pipe, "model")
-        run_id = run.info.run_id
+
+    # Save model and feature list to path so Phase 5 can load without Model Registry
+    storage_cfg = cfg.get("storage", {})
+    base_path = storage_cfg.get("base_path", "/tmp").replace("dbfs:", "").strip()
+    if base_path.startswith("/Volumes/"):
+        model_dir = base_path.rstrip("/") + "/models"
+    else:
+        model_dir = "/tmp/fraud_models"
+    os.makedirs(model_dir, exist_ok=True)
+    model_path = os.path.join(model_dir, "fraud_model.pkl")
+    meta_path = os.path.join(model_dir, "feature_cols.json")
+    joblib.dump(pipe, model_path)
+    with open(meta_path, "w") as f:
+        json.dump({"feature_cols": feature_cols}, f)
 
     return {
         "metrics": metrics,
         "model_name": model_name,
         "run_id": run_id,
-        "register_hint": "Register this run's model from MLflow UI (run → Register model) as " + model_name,
+        "model_path": model_path,
+        "feature_cols_path": meta_path,
     }
