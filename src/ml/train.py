@@ -1,7 +1,9 @@
 """
-Train a binary fraud classifier on Silver data; log and register with MLflow.
+Train a binary fraud classifier on Silver data; log to MLflow (no in-code registration).
+On clusters where spark.mlflow.modelRegistryUri is not set, register the model from
+MLflow UI: open the run → Register model → name e.g. fraud_detection_model.
 """
-import logging
+import os
 from typing import Optional, Dict, Any
 
 import mlflow
@@ -78,6 +80,13 @@ def run_training(
         "roc_auc": roc_auc_score(y_test, y_proba) if y_test.nunique() > 1 else 0.0,
     }
 
+    # Use workspace MLflow without requiring Spark registry config
+    if "DATABRICKS_RUNTIME_VERSION" in os.environ:
+        try:
+            mlflow.set_tracking_uri("databricks")
+        except Exception:
+            pass
+
     if experiment_name:
         try:
             mlflow.set_experiment(experiment_name)
@@ -92,15 +101,13 @@ def run_training(
             "test_size": 0.2,
         })
         mlflow.log_metrics(metrics)
-        # Log without registering to avoid spark.mlflow.modelRegistryUri (not set on some clusters)
+        # Log model only; do not call mlflow.register_model (avoids spark.mlflow.modelRegistryUri)
         mlflow.sklearn.log_model(pipe, "model")
         run_id = run.info.run_id
 
-    # Register via tracking server (avoids spark.mlflow.modelRegistryUri on some clusters)
-    try:
-        model_uri = f"runs:/{run_id}/model"
-        mlflow.register_model(model_uri, model_name)
-    except Exception as e:
-        logging.warning("Model registration failed (%s). Model is logged; register from MLflow UI.", e)
-
-    return {"metrics": metrics, "model_name": model_name, "run_id": run_id}
+    return {
+        "metrics": metrics,
+        "model_name": model_name,
+        "run_id": run_id,
+        "register_hint": "Register this run's model from MLflow UI (run → Register model) as " + model_name,
+    }
