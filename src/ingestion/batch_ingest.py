@@ -33,6 +33,16 @@ def load_config(path: str) -> dict:
     return _resolve_refs(cfg, cfg)
 
 
+def _spark_path(path: str) -> str:
+    """Ensure path has a scheme so Spark accepts it (e.g. dbfs:/Volumes/...)."""
+    if not path or "://" in path:
+        return path
+    path = path.strip()
+    if path.startswith("/Volumes/") or path.startswith("/"):
+        return "dbfs:" + path
+    return path
+
+
 def run_batch_ingestion(
     spark: SparkSession,
     config_path: str,
@@ -48,10 +58,12 @@ def run_batch_ingestion(
     kaggle_path = data_sources_cfg.get("kaggle_credit_card_csv")
     if not kaggle_path:
         raise ValueError("kaggle_credit_card_csv is not set in config")
+    kaggle_path = _spark_path(kaggle_path)
 
     bronze_base_path = storage_cfg.get("bronze_path")
     if not bronze_base_path:
         raise ValueError("storage.bronze_path is not set in config")
+    bronze_base_path = _spark_path(bronze_base_path)
 
     catalog = databricks_cfg.get("catalog", "")
     schema = databricks_cfg.get("schema")
