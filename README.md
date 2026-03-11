@@ -121,5 +121,27 @@ No Spark jobs, Delta tables, or ML components are created yet; those start from 
 
 ---
 
+## Phase 2 – Silver Layer (Cleaning, DQ, Dedup)
+
+After **Phase 1** has run (Bronze populated), run the Silver transformation:
+
+1. In Databricks, open **`notebooks/02_silver_layer.py`**.
+2. Set the working directory in the notebook to your project root (same as in `01_batch_ingestion`), e.g.  
+   `os.chdir("/Workspace/Users/<your-email>/Fraud_Detection_Pipeline")`.
+3. Attach the notebook to your cluster (e.g. Serverless) and run all cells.
+
+This reads from `bronze_transactions`, applies validation (non-null key columns, `Amount > 0`, `Class` in 0/1), deduplicates, adds `transaction_id`, and writes to **`silver_transactions`** (managed table).
+
+### Testing Phase 2
+
+- After the notebook runs, in **Catalog** open your schema (e.g. `workspace.fraud`) and check table **`silver_transactions`**.
+- Run:  
+  `SELECT COUNT(*), COUNT(DISTINCT transaction_id) FROM workspace.fraud.silver_transactions;`  
+  Row count and distinct `transaction_id` count should match (one id per row).
+- Spot-check:  
+  `SELECT * FROM workspace.fraud.silver_transactions LIMIT 10;`
+
+---
+
 For detailed design and later phases, see `IMPLEMENTATION_PLAN.md`.
 
