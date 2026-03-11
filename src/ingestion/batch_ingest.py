@@ -4,9 +4,33 @@ import yaml
 from pyspark.sql import SparkSession, DataFrame, functions as F
 
 
+def _resolve_refs(obj, cfg: dict, prefix: str = "") -> str:
+    """Resolve ${section.key} references in strings using config values."""
+    if isinstance(obj, str):
+        s = obj
+        while "${" in s and "}" in s:
+            start = s.index("${") + 2
+            end = s.index("}", start)
+            key = s[start:end].strip()
+            parts = key.split(".")
+            val = cfg
+            for p in parts:
+                val = val.get(p) if isinstance(val, dict) else None
+            if val is None or (isinstance(val, str) and val.startswith("${")):
+                break
+            s = s[: start - 2] + str(val) + s[end + 1 :]
+        return s
+    if isinstance(obj, dict):
+        return {k: _resolve_refs(v, cfg, f"{prefix}{k}.") for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_resolve_refs(v, cfg, prefix) for v in obj]
+    return obj
+
+
 def load_config(path: str) -> dict:
     with open(path, "r") as f:
-        return yaml.safe_load(f)
+        cfg = yaml.safe_load(f)
+    return _resolve_refs(cfg, cfg)
 
 
 def run_batch_ingestion(

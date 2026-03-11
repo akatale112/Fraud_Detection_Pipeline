@@ -2,16 +2,16 @@ env: dev
 
 databricks:
   # Logical location for this project's tables (adjust to your workspace)
-  catalog: main          # or your Unity Catalog name
+  catalog: workspace     # use 'workspace' catalog on free edition
   schema: fraud          # database/schema name for this project
 
 storage:
-  # Base path in DBFS or mounted storage for this project
-  base_path: dbfs:/mnt/fraud_project
-  raw_path: ${storage.base_path}/raw
-  bronze_path: ${storage.base_path}/bronze
-  silver_path: ${storage.base_path}/silver
-  gold_path: ${storage.base_path}/gold
+  # Use Volumes path (no /mnt on free edition). Same volume as CSV is fine for dev.
+  base_path: /Volumes/workspace/fraud/fraud_data
+  raw_path: /Volumes/workspace/fraud/fraud_data/raw
+  bronze_path: /Volumes/workspace/fraud/fraud_data/bronze
+  silver_path: /Volumes/workspace/fraud/fraud_data/silver
+  gold_path: /Volumes/workspace/fraud/fraud_data/gold
 
 tables:
   bronze_transactions: bronze_transactions
@@ -30,7 +30,7 @@ kafka:
     security_protocol: PLAINTEXT
 
 data_sources:
-  kaggle_credit_card_csv: dbfs:/mnt/fraud_project/raw/creditcard.csv
+  kaggle_credit_card_csv: /Volumes/workspace/fraud/fraud_data/creditcard.csv
   # Update the above path once the dataset is uploaded.
 
 real_time_inference:
