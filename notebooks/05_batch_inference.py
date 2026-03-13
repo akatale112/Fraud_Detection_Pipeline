@@ -5,7 +5,7 @@
 # MAGIC Requires the model at `storage.base_path/models/fraud_model.pkl` and `feature_cols.json` (from Phase 4).
 
 # Databricks notebook source
-
+# CELL 1: Set working directory and run batch inference
 import os
 os.chdir("/Workspace/Users/akatale@umd.edu/Fraud_Detection_Pipeline")
 
