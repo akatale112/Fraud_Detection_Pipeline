@@ -439,6 +439,11 @@ This section summarizes the implementation in clear phases. Each phase can be de
   - Reuse Bronze → Silver → Gold logic for streaming (or configure DLT for streaming mode).
   - Connect the streaming job or a downstream process to the Model Serving endpoint to score events in near real time.
   - Optionally write scored streaming results back into `gold_transaction_scores` for dashboards.
+- **Implemented**
+  - **Synthetic producer:** `scripts/kafka_synthetic_producer.py` (existing).
+  - **Structured Streaming:** `src/ingestion/stream_ingest.run_stream_ingestion()` reads from Kafka (JSON), parses to Kaggle-like schema, appends to **`bronze_transactions`** with `ingestion_source = 'kafka'`; checkpoint under `storage.base_path/checkpoints/kafka_bronze`.
+  - **Notebook:** `notebooks/06_stream_ingestion_kafka.py` starts the stream and blocks until cancelled.
+  - **Reuse Silver/Gold:** Run `02_silver_layer` and `03_gold_layer` (manual or scheduled) to process new Bronze rows; optionally `05_batch_inference` to score. Real-time scoring via Model Serving documented in `docs/MODEL_SERVING.md` and `docs/STREAMING.md`.
 
 ### Phase 7: Orchestration, Monitoring, and Documentation
 

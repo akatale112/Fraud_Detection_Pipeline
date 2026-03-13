@@ -1,10 +1,3 @@
-# Databricks notebook source
-# MAGIC %md
-# MAGIC ## Phase 5: Batch Inference
-# MAGIC Scores `silver_transactions` with the trained model and writes results to `gold_transaction_scores` (transaction_id, score, prediction, model_version, scored_at).
-# MAGIC Requires the model at `storage.base_path/models/fraud_model.pkl` and `feature_cols.json` (from Phase 4).
-
-# Databricks notebook source
 import os
 os.chdir("/Workspace/Users/akatale@umd.edu/Fraud_Detection_Pipeline")
 

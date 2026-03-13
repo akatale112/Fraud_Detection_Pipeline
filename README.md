@@ -217,5 +217,25 @@ To expose the model as an HTTP endpoint for low-latency scoring (e.g. for stream
 
 ---
 
+## Phase 6 – Streaming Ingestion (Kafka → Bronze)
+
+Stream transaction events from Kafka into the same Bronze table (append with `ingestion_source = 'kafka'`).
+
+### Prerequisites
+
+- **Kafka** reachable from your Databricks cluster (set `kafka.bootstrap_servers` and `kafka.topic_transactions` in config).
+- **Synthetic producer:** Run `scripts/kafka_synthetic_producer.py` (e.g. on your laptop or a server) to send JSON messages to the topic. See `scripts/README_synthetic_producer.md`.
+
+### Run the streaming job
+
+1. Open **`notebooks/06_stream_ingestion_kafka.py`**, set `os.chdir` to your repo path, then run the cell.
+2. The notebook starts a **Structured Streaming** query that reads from Kafka, parses JSON (transaction_id, Time, V1–V28, Amount, Class), adds `ingestion_ts` and `ingestion_source = 'kafka'`, and appends to **`bronze_transactions`**.
+3. The cell blocks until you **Cancel** the run. While it runs, start the producer to send messages; they will be written to Bronze.
+4. To process new Bronze data into Silver/Gold, run **`02_silver_layer`** and **`03_gold_layer`** (on a schedule or manually). Optionally score new Silver rows with **`05_batch_inference`**.
+
+See **`docs/STREAMING.md`** for more detail and optional real-time scoring via Model Serving.
+
+---
+
 For detailed design and later phases, see `IMPLEMENTATION_PLAN.md`.
 
