@@ -12,5 +12,6 @@ from src.ingestion.stream_ingest import run_stream_ingestion
 
 config_path = "config/config_dev.yaml"
 query = run_stream_ingestion(spark, config_path)
-print("Stream started. Appending to Bronze. This cell will block until you stop the run (Cancel cell).")
+print("Stream started (AvailableNow: process all available Kafka messages then stop). Waiting for completion...")
 query.awaitTermination()
+print("Stream finished. New Kafka data has been appended to Bronze.")

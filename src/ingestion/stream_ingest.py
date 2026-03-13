@@ -38,6 +38,7 @@ def run_stream_ingestion(
     spark: SparkSession,
     config_path: str,
     checkpoint_base: Optional[str] = None,
+    trigger_available_now: bool = True,
 ):
     """
     Start a streaming query: Kafka topic -> parse JSON -> append to Bronze.
@@ -46,6 +47,9 @@ def run_stream_ingestion(
     databricks.catalog/schema, tables.bronze_transactions, storage.base_path.
 
     checkpoint_base: directory for Spark checkpoint (default: storage.base_path/checkpoints/kafka_bronze).
+    trigger_available_now: if True (default), use Trigger.AvailableNow so the stream processes
+        all available data and stops — works on Serverless and clusters that don't support
+        infinite ProcessingTime. Set False for continuous streaming on classic clusters.
     Returns the active StreamingQuery; call .awaitTermination() to block.
     """
     cfg = load_config(config_path)
@@ -91,14 +95,16 @@ def run_stream_ingestion(
     cols = ["transaction_id", "Time"] + [f"V{i}" for i in range(1, 29)] + ["Amount", "Class", "ingestion_ts", "ingestion_source"]
     parsed = parsed.select([c for c in cols if c in parsed.columns])
 
-    query = (
+    write_stream = (
         parsed.writeStream
         .format("delta")
         .outputMode("append")
         .option("checkpointLocation", checkpoint)
         .option("mergeSchema", "true")
-        .toTable(table_name)
     )
+    if trigger_available_now:
+        write_stream = write_stream.trigger(availableNow=True)
+    query = write_stream.toTable(table_name)
     return query
 
 
