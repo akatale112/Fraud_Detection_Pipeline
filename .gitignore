@@ -82,3 +82,4 @@ temp/
 htmlcov/
 .pytest_cache/
 .tox/
+New_query.xlsx

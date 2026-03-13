@@ -167,18 +167,35 @@ This reads from `silver_transactions`, groups by **report_date** (from `ingestio
 
 ## Phase 4 – Feature Engineering & ML Training
 
-After **Phase 3** (Gold and Silver populated), run the training pipeline:
+After **Phase 3** (Gold and Silver populated), run the training pipeline.
 
-1. In Databricks, open **`notebooks/04_ml_training.py`**.
-2. Set the working directory to your project root (same path as in earlier phases).
-3. Attach the notebook to your cluster and run all cells.
+**Two ways to run (pick one):**
 
-This reads from `silver_transactions`, adds fraud features (`log_amount`, `time_hour`), trains a **LogisticRegression** classifier (with StandardScaler and class_weight="balanced"), and **logs the run and registers the model** in MLflow under the name in config (`real_time_inference.model_name`, e.g. `fraud_detection_model`).
+### Option A: Standalone (recommended on Serverless)
+
+1. **Get Silver data as a file**
+   - **Classic cluster:** Run **`notebooks/04a_export_silver_for_training.py`** once; it writes `silver_transactions` to Parquet under `storage.base_path/export/silver`.
+   - **Serverless:** In **SQL Editor**, run `SELECT * FROM workspace.fraud.silver_transactions`, download as CSV, upload to your Volume (e.g. `.../export/silver_transactions.csv`).
+2. In **`config/config_dev.yaml`** add (use the path you have):
+   ```yaml
+   ml:
+     training_data_path: /Volumes/workspace/fraud/fraud_data/export/silver
+   ```
+   (Use the Parquet folder path from 04a, or the CSV file path from SQL export.)
+3. Open **`notebooks/04_ml_training.py`**, set `os.chdir` to your project root, run all cells. It will use **standalone** training (no Spark); model and `feature_cols.json` are written to `storage.base_path/models/`.
+
+### Option B: Spark path (classic cluster with MLflow config)
+
+1. On your cluster, set Spark config: **`spark.mlflow.modelRegistryUri`** = **`databricks`** (Compute → cluster → Edit → Advanced options → Spark).
+2. Open **`notebooks/04_ml_training.py`**, run all cells. It will read from `silver_transactions` and train using Spark; model is logged to MLflow and also saved under `storage.base_path/models/`.
+
+**What Phase 4 does:** Adds fraud features (`log_amount`, `time_hour`), trains a **LogisticRegression** pipeline (StandardScaler + classifier, class_weight="balanced"), evaluates (accuracy, precision, recall, F1, ROC-AUC), logs to file-based MLflow, and saves the model as `fraud_model.pkl` and feature list as `feature_cols.json` for Phase 5.
 
 ### Testing Phase 4
 
-- In Databricks, go to **MLflow** (Experiments) and open the **`fraud_detection`** experiment (or the experiment name you passed). You should see a run with metrics (accuracy, precision, recall, F1, ROC-AUC) and a registered model.
-- In **Catalog** → **MLflow Model Registry**, find the model name (e.g. `fraud_detection_model`) and confirm the latest run is registered. You can move it to **Staging** or **Production** for Phase 5 inference.
+- Check **`storage.base_path/models/`** (e.g. in Catalog → your Volume): you should see **`fraud_model.pkl`** and **`feature_cols.json`**.
+- If you used the Spark path with Databricks MLflow, open **MLflow** → experiment **`fraud_detection`** and confirm a run with metrics.
+- Install deps if needed: **`pip install -r requirements_ml.txt`** (for standalone or local runs).
 
 ---
 

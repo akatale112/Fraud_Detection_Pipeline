@@ -34,7 +34,13 @@ data_sources:
   # Update the above path once the dataset is uploaded.
 
 real_time_inference:
-  # Name of MLflow registered model to use for inference (to be set in later phases)
   model_name: fraud_detection_model
-  serving_endpoint: null   # URL of Databricks Model Serving endpoint (Phase 5/6)
+  serving_endpoint: null
+
+ml:
+  training_data_path: /Volumes/workspace/fraud/fraud_data/silver_transactions.parquet
+# Optional: when cluster has CONFIG_NOT_AVAILABLE (spark.mlflow.modelRegistryUri), export
+# silver_transactions to this path (CSV or Parquet) and run training via standalone script.
+# ml:
+#   training_data_path: /Volumes/workspace/fraud/fraud_data/export/silver.parquet
 
