@@ -423,6 +423,9 @@ This section summarizes the implementation in clear phases. Each phase can be de
     - Write results to `gold_transaction_scores` (including score, prediction, model version, and timestamp).
   - Set up Databricks Model Serving endpoint using the registered Production model.
   - Define input schema for real-time requests (matching synthetic/Kafka message schema).
+- **Implemented**
+  - **Batch inference:** `src/ml/inference.run_batch_inference()` and notebook `notebooks/05_batch_inference.py` (read Silver, load model from `storage.base_path/models/`, score, write to `gold_transaction_scores`).
+  - **Real-time schema:** `REALTIME_INPUT_SCHEMA` in `src/ml/inference.py`; Model Serving setup and request format documented in `docs/MODEL_SERVING.md`.
 
 ### Phase 6: Streaming Ingestion with Kafka & Real-time Flow
 

@@ -199,5 +199,23 @@ After **Phase 3** (Gold and Silver populated), run the training pipeline.
 
 ---
 
+## Phase 5 – Inference (Batch + Real-Time Preparation)
+
+After **Phase 4** (model and `feature_cols.json` under `storage.base_path/models/`), you can score transactions and write results to Gold.
+
+### Batch inference
+
+1. Ensure **`silver_transactions`** exists and the model artifacts exist at **`storage.base_path/models/`** (`fraud_model.pkl`, `feature_cols.json`).
+2. Open **`notebooks/05_batch_inference.py`**, set `os.chdir` to your repo path (e.g. `/Workspace/Users/<your-user>/Fraud_Detection_Pipeline`), then run all cells.
+3. The job reads Silver, adds derived features, scores with the saved model, and writes to **`gold_transaction_scores`** with: `transaction_id`, `score`, `prediction`, `model_version`, `scored_at`.
+
+**Testing:** Query the scores table, e.g. `SELECT * FROM workspace.fraud.gold_transaction_scores LIMIT 20;`
+
+### Real-time inference (Model Serving)
+
+To expose the model as an HTTP endpoint for low-latency scoring (e.g. for streaming or APIs), register the model in MLflow, create a **Databricks Model Serving** endpoint, and call it with the expected schema. See **`docs/MODEL_SERVING.md`** for step-by-step setup and the real-time request schema.
+
+---
+
 For detailed design and later phases, see `IMPLEMENTATION_PLAN.md`.
 
